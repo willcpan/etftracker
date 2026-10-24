@@ -22,7 +22,7 @@ function mergeHistories(key: string, funds: FundDetail[]): History {
     f.history.dates.forEach((d, j) => { w[di.get(d)!] = f.history.weights[i][j]; s[di.get(d)!] = f.history.shares[i][j] })
     weights.push(w); shares.push(s)
   }
-  return { dates, securities, weights, shares, cash_weight: [], n_positions: [], net_assets: [] }
+  return { dates, securities, weights, shares, cash_weight: [], n_positions: [], net_assets: [], shares_outstanding: [] }
 }
 
 export default function SecurityPage() {

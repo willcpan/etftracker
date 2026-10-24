@@ -34,19 +34,25 @@ def main() -> None:
         # walk backwards in time, generating earlier snapshots from the latest one
         snaps = [latest]
         cur = latest
+        so = float(latest.extra.get("shares_outstanding") or 100_000_000)
+        latest.extra["shares_outstanding"] = so
         for _ in range(args.days):
             prev = copy.deepcopy(cur)
             prev.as_of = previous_business_day(cur.as_of)
             prev.fetched_at = None
-            flow = 1 / rnd.uniform(0.985, 1.02)  # undo a creation/redemption
+            # undo a creation/redemption: most days tiny, some days a real flow
+            flow = 1 / (rnd.uniform(0.99, 1.012) if rnd.random() < 0.5 else rnd.uniform(0.9995, 1.0005))
+            so = so * flow
+            eq = [h for h in prev.holdings if h.asset_type == "equity" and h.shares]
+            # on real flow days the manager sometimes leaves a few positions untouched
+            untouched = {id(h) for h in rnd.sample(eq, k=min(len(eq), rnd.randint(1, 3)))} if abs(flow - 1) > 0.005 and rnd.random() < 0.6 else set()
             for h in prev.holdings:
                 if h.asset_type != "equity":
                     continue
-                if h.shares:
+                if h.shares and id(h) not in untouched:
                     h.shares = round(h.shares * flow)
                 if h.price:
                     h.price = h.price / rnd.uniform(0.975, 1.025)
-            eq = [h for h in prev.holdings if h.asset_type == "equity" and h.shares]
             # occasional manager trades (seen in reverse)
             if eq and rnd.random() < 0.35:
                 h = rnd.choice(eq)
@@ -64,7 +70,7 @@ def main() -> None:
             for h in prev.holdings:
                 if h.market_value is not None and total:
                     h.weight = h.market_value / total
-            prev.extra = {"net_assets": total}
+            prev.extra = {"net_assets": total, "shares_outstanding": round(so)}
             snaps.append(prev)
             cur = prev
         for s in snaps:

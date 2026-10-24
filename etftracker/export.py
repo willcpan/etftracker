@@ -13,11 +13,11 @@ from datetime import date, timedelta
 from pathlib import Path
 
 from .config import Config
-from .diff import diff_series
+from .diff import ACTIVE_ACTIONS, diff_series
 from .store import Store
 from .util import now_utc_iso
 
-ACTIVE_ACTIONS = {"new", "exit", "add", "trim"}
+COUNTED_ACTIONS = ("new", "exit", "add", "trim", "kept", "not_added", "flow")
 
 
 def _r(x, nd=6):
@@ -54,12 +54,8 @@ def fund_analytics(store: Store, config: Config, ticker: str) -> dict | None:
     tt = float(opts.get("trade_threshold", config.settings.trade_threshold))
     wt = float(opts.get("weight_threshold", config.settings.weight_threshold))
     min_share_change = float(opts.get("min_share_change", 0))
-    diffs = diff_series(snaps, tt, wt)
-    for d in diffs:
-        for t in d["trades"]:
-            if t["action"] in ("add", "trim") and t["shares_change"] is not None and \
-                    abs(t["shares_change"]) < min_share_change:
-                t["action"] = "hold"
+    ft = float(opts.get("flow_threshold", config.settings.flow_threshold))
+    diffs = diff_series(snaps, tt, wt, min_share_change, ft)
     latest = snaps[-1]
     prev = snaps[-2] if len(snaps) > 1 else None
     latest_diff = diffs[-1] if diffs else None
@@ -74,6 +70,7 @@ def fund_analytics(store: Store, config: Config, ticker: str) -> dict | None:
             d["change"] = {k: _r(t[k], 6) for k in ("shares_change", "adj_change", "weight_change", "est_value")}
             d["change"]["action"] = t["action"]
             d["change"]["weight_prev"] = _r(t["weight_prev"], 6)
+            d["change"]["flow_direction"] = t["flow_direction"]
         holdings.append(d)
 
     # ---- history matrix (equities only) -----------------------------------------
@@ -105,6 +102,7 @@ def fund_analytics(store: Store, config: Config, ticker: str) -> dict | None:
         "cash_weight": [_r(sum((h.weight or 0) for h in s.holdings if h.asset_type == "cash"), 6) for s in snaps],
         "n_positions": [len(s.equities) for s in snaps],
         "net_assets": [s.extra.get("net_assets") or _r(s.total_market_value(), 2) for s in snaps],
+        "shares_outstanding": [s.extra.get("shares_outstanding") for s in snaps],
     }
 
     # ---- trade log ------------------------------------------------------------------
@@ -115,11 +113,29 @@ def fund_analytics(store: Store, config: Config, ticker: str) -> dict | None:
                 trade_log.append({**{k: _r(v, 6) if isinstance(v, float) else v for k, v in t.items()}, "fund": ticker})
     trade_log.sort(key=lambda t: (t["as_of"], -(abs(t["est_value"] or 0))), reverse=True)
 
-    summary_changes = {a: 0 for a in ACTIVE_ACTIONS}
+    # ---- flow events: one per snapshot pair, describing creations/redemptions ------
+    flows = []
+    for d in diffs:
+        by_action = {a: [t["ticker"] or t["name"] for t in d["trades"] if t["action"] == a]
+                     for a in ("kept", "not_added", "add", "trim", "new", "exit")}
+        flows.append({
+            "fund": ticker,
+            "as_of": d["as_of"],
+            "prev_as_of": d["prev_as_of"],
+            "flow_factor": _r(d["flow_factor"], 6),
+            "flow_basis": d["flow_basis"],
+            "flow_direction": d["flow_direction"],
+            "flow_pct": _r(d["flow_pct"], 6),
+            "flow_value": _r(d["flow_value"], 2),
+            "counts": {a: d["counts"][a] for a in COUNTED_ACTIONS},
+            "n_positions": d["n_now"],
+            "tickers": by_action,
+        })
+
+    summary_changes = {a: 0 for a in COUNTED_ACTIONS}
     if latest_diff:
-        for t in latest_diff["trades"]:
-            if t["action"] in summary_changes:
-                summary_changes[t["action"]] += 1
+        for a in COUNTED_ACTIONS:
+            summary_changes[a] = latest_diff["counts"][a]
 
     cash_w = sum((h.weight or 0) for h in latest.holdings if h.asset_type == "cash")
     return {
@@ -134,15 +150,14 @@ def fund_analytics(store: Store, config: Config, ticker: str) -> dict | None:
         "net_assets": latest.extra.get("net_assets") or _r(latest.total_market_value(), 2),
         "cash_weight": _r(cash_w, 6),
         "flow_factor": _r(latest_diff["flow_factor"], 6) if latest_diff else None,
+        "latest_flow": flows[-1] if flows else None,
         "latest_changes": summary_changes,
         "trade_threshold": tt,
+        "flow_threshold": ft,
         "holdings": holdings,
         "history": history,
         "trades": trade_log,
-        "diffs": [{"as_of": d["as_of"], "prev_as_of": d["prev_as_of"], "flow_factor": _r(d["flow_factor"], 6),
-                   "n_prev": d["n_prev"], "n_now": d["n_now"],
-                   "counts": {a: sum(1 for t in d["trades"] if t["action"] == a) for a in ACTIVE_ACTIONS}}
-                  for d in diffs],
+        "flows": flows,
         "_trades_all": [t for d in diffs for t in d["trades"]],  # stripped before writing; used for sqlite
     }
 
@@ -152,6 +167,7 @@ def export_site(store: Store, config: Config, out_dir: Path) -> dict:
     (out_dir / "funds").mkdir(parents=True, exist_ok=True)
     funds_out = []
     activity: list[dict] = []
+    all_flows: list[dict] = []
     securities: dict[str, dict] = {}
     trades_by_fund: dict[str, list[dict]] = {}
     tickers = [f.ticker for f in config.funds if f.enabled]
@@ -165,6 +181,7 @@ def export_site(store: Store, config: Config, out_dir: Path) -> dict:
         trades_by_fund[ticker] = fa.pop("_trades_all")
         (out_dir / "funds" / f"{ticker}.json").write_text(json.dumps(fa, separators=(",", ":")))
         activity.extend(fa["trades"])
+        all_flows.extend(fa["flows"])
         top = [{"ticker": h["ticker"], "name": h["name"], "weight": h["weight"]}
                for h in fa["holdings"] if h["asset_type"] == "equity"][:10]
         funds_out.append({
@@ -176,6 +193,7 @@ def export_site(store: Store, config: Config, out_dir: Path) -> dict:
             "net_assets": fa["net_assets"],
             "cash_weight": fa["cash_weight"],
             "latest_changes": fa["latest_changes"],
+            "latest_flow": fa["latest_flow"],
             "top_holdings": top,
             "first_as_of": fa["history"]["dates"][0],
         })
@@ -189,14 +207,17 @@ def export_site(store: Store, config: Config, out_dir: Path) -> dict:
     activity.sort(key=lambda t: (t["as_of"], abs(t["est_value"] or 0)), reverse=True)
     cutoff = (date.today() - timedelta(days=45)).isoformat()
     recent = [t for t in activity if t["as_of"] >= cutoff][:100]
+    all_flows.sort(key=lambda f: f["as_of"], reverse=True)
     index = {
         "generated_at": now_utc_iso(),
         "funds": funds_out,
         "recent_activity": recent,
+        "recent_flows": [f for f in all_flows if f["as_of"] >= cutoff][:100],
         "n_securities": len(securities),
     }
     (out_dir / "index.json").write_text(json.dumps(index, separators=(",", ":")))
-    (out_dir / "activity.json").write_text(json.dumps({"trades": activity[:5000]}, separators=(",", ":")))
+    (out_dir / "activity.json").write_text(json.dumps({"trades": activity[:5000], "flows": all_flows[:3000]},
+                                                      separators=(",", ":")))
     sec_list = sorted(securities.values(), key=lambda s: (-len(s["funds"]), -sum(f["weight"] for f in s["funds"])))
     (out_dir / "securities.json").write_text(json.dumps({"securities": sec_list}, separators=(",", ":")))
     return {"funds": [f["ticker"] for f in funds_out], "trades": len(activity), "trades_by_fund": trades_by_fund}

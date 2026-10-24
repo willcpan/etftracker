@@ -1,4 +1,6 @@
-export type Action = 'new' | 'exit' | 'add' | 'trim' | 'hold'
+export type Action = 'new' | 'exit' | 'add' | 'trim' | 'flow' | 'kept' | 'not_added' | 'hold'
+export type FlowDirection = 'inflow' | 'outflow' | 'none'
+export type FlowBasis = 'shares_outstanding' | 'median' | 'none'
 
 export interface FundMeta {
   ticker: string
@@ -9,7 +11,22 @@ export interface FundMeta {
   inception: string | null
 }
 
-export interface ChangeCounts { new: number; exit: number; add: number; trim: number }
+export interface ChangeCounts { new: number; exit: number; add: number; trim: number; kept: number; not_added: number; flow: number }
+
+/** One snapshot-to-snapshot step of a fund: how big the creation/redemption was and what happened to positions. */
+export interface FlowEvent {
+  fund: string
+  as_of: string
+  prev_as_of: string
+  flow_factor: number
+  flow_basis: FlowBasis
+  flow_direction: FlowDirection
+  flow_pct: number
+  flow_value: number | null
+  counts: ChangeCounts
+  n_positions: number
+  tickers: Record<'kept' | 'not_added' | 'add' | 'trim' | 'new' | 'exit', string[]>
+}
 
 export interface FundSummary extends FundMeta {
   latest_as_of: string
@@ -20,6 +37,7 @@ export interface FundSummary extends FundMeta {
   net_assets: number | null
   cash_weight: number | null
   latest_changes: ChangeCounts
+  latest_flow: FlowEvent | null
   top_holdings: { ticker: string | null; name: string; weight: number | null }[]
 }
 
@@ -39,6 +57,7 @@ export interface Trade {
   weight_change: number | null
   est_value: number | null
   flow_factor: number | null
+  flow_direction: FlowDirection
   basis: 'shares' | 'weight'
   action: Action
 }
@@ -47,6 +66,7 @@ export interface IndexFile {
   generated_at: string
   funds: FundSummary[]
   recent_activity: Trade[]
+  recent_flows: FlowEvent[]
   n_securities: number
 }
 
@@ -57,6 +77,7 @@ export interface HoldingChange {
   est_value: number | null
   weight_prev: number | null
   action: Action
+  flow_direction: FlowDirection
 }
 
 export interface Holding {
@@ -80,6 +101,7 @@ export interface History {
   cash_weight: (number | null)[]
   n_positions: number[]
   net_assets: (number | null)[]
+  shares_outstanding: (number | null)[]
 }
 
 export interface FundDetail {
@@ -94,12 +116,14 @@ export interface FundDetail {
   net_assets: number | null
   cash_weight: number | null
   flow_factor: number | null
+  latest_flow: FlowEvent | null
   latest_changes: ChangeCounts
   trade_threshold: number
+  flow_threshold: number
   holdings: Holding[]
   history: History
   trades: Trade[]
-  diffs: { as_of: string; prev_as_of: string; flow_factor: number; n_prev: number; n_now: number; counts: ChangeCounts }[]
+  flows: FlowEvent[]
 }
 
 export interface SecurityEntry {
@@ -131,5 +155,5 @@ export function loadJson<T>(path: string): Promise<T> {
 
 export const loadIndex = () => loadJson<IndexFile>('index.json')
 export const loadFund = (ticker: string) => loadJson<FundDetail>(`funds/${ticker}.json`)
-export const loadActivity = () => loadJson<{ trades: Trade[] }>('activity.json')
+export const loadActivity = () => loadJson<{ trades: Trade[]; flows: FlowEvent[] }>('activity.json')
 export const loadSecurities = () => loadJson<{ securities: SecurityEntry[] }>('securities.json')

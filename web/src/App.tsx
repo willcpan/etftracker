@@ -68,7 +68,8 @@ export default function App() {
         </main>
         <footer className="footer">
           Holdings are captured daily from each fund's published holdings file. Trade detection is an estimate:
-          share changes are adjusted for creations/redemptions and compared against a per-fund threshold.
+          each day's creation/redemption flow is measured first, positions that merely scaled with it are labelled
+          "flow", and only moves beyond it (or positions deliberately left untouched on a flow day) are reported.
         </footer>
       </div>
     </ThemeContext.Provider>

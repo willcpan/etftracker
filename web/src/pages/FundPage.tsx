@@ -1,12 +1,14 @@
 import { useMemo, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { loadFund } from '../api'
-import { fmtDate, fmtDateTime, money, pct } from '../format'
+import { flowLabel, fmtDate, fmtDateTime, money, pct } from '../format'
 import { Status, useAsync } from '../hooks'
 import HoldingsTable from '../components/HoldingsTable'
 import TradeList from '../components/TradeList'
 import WeightHistoryChart from '../components/WeightHistoryChart'
 import CompareTool from '../components/CompareTool'
+import FlowRow, { flowSentence } from '../components/FlowRow'
+import ActionLegend from '../components/ActionLegend'
 
 export default function FundPage() {
   const { ticker = '' } = useParams()
@@ -24,6 +26,8 @@ export default function FundPage() {
     return [...base, k]
   })
   const latestTrades = data.trades.filter((t) => t.as_of === data.latest_as_of)
+  const lf = data.latest_flow
+  const flowBasisNote = lf?.flow_basis === 'shares_outstanding' ? 'from ETF shares outstanding' : lf?.flow_basis === 'median' ? 'estimated from position sizes' : 'unknown'
   return (
     <div>
       <div className="page-head">
@@ -35,7 +39,7 @@ export default function FundPage() {
         <div className="stat"><div className="lbl">Net assets</div><div className="val">{money(data.net_assets)}</div></div>
         <div className="stat"><div className="lbl">Positions</div><div className="val">{data.n_positions}</div><div className="sub">{pct(data.cash_weight, 1)} cash</div></div>
         <div className="stat"><div className="lbl">Snapshots</div><div className="val">{data.n_snapshots}</div><div className="sub">since {fmtDate(data.history.dates[0])}</div></div>
-        <div className="stat"><div className="lbl">Flow factor</div><div className="val">{data.flow_factor == null ? '—' : data.flow_factor.toFixed(4)}</div><div className="sub">share scaling from creations/redemptions</div></div>
+        <div className="stat"><div className="lbl">Latest flow</div><div className="val" style={{ fontSize: 18 }}>{lf ? flowLabel(lf.flow_direction, lf.flow_pct) : '—'}</div><div className="sub">{lf && lf.flow_direction !== 'none' && lf.flow_value != null ? `≈ ${money(Math.abs(lf.flow_value))} ` : ''}{lf ? flowBasisNote : 'creations/redemptions'}</div></div>
       </div>
 
       <h2>Changes vs. {data.prev_as_of ? fmtDate(data.prev_as_of) : 'previous snapshot'}</h2>
@@ -44,12 +48,16 @@ export default function FundPage() {
           <p className="muted" style={{ margin: 0 }}>Only one snapshot so far. Trades appear once the next day's holdings are captured.</p>
         ) : (
           <>
+            {lf && <p style={{ margin: '0 0 10px' }}>{flowSentence(lf)}</p>}
             <div className="chips" style={{ marginBottom: 12 }}>
               <span className="chip new">✚ {c.new} new</span>
               <span className="chip add">▲ {c.add} added</span>
               <span className="chip trim">▼ {c.trim} trimmed</span>
               <span className="chip exit">✕ {c.exit} exited</span>
-              <span className="muted small">threshold {pct(data.trade_threshold, 1)} flow-adjusted share change</span>
+              <span className="chip kept">◆ {c.kept} kept</span>
+              <span className="chip not_added">◇ {c.not_added} not added</span>
+              <span className="chip flow">≈ {c.flow} scaled with flows</span>
+              <span className="muted small">thresholds: {pct(data.trade_threshold, 1)} beyond flows for a trade, {pct(data.flow_threshold, 2)} of the fund for a flow day</span>
             </div>
             <TradeList trades={latestTrades} showFund={false} />
           </>
@@ -79,8 +87,15 @@ export default function FundPage() {
       <h2>Compare any two dates</h2>
       <div className="card"><CompareTool history={data.history} threshold={data.trade_threshold} /></div>
 
-      <h2>Trade log</h2>
-      <div className="card"><TradeList trades={data.trades} showFund={false} limit={300} /></div>
+      <h2>Trade and flow log</h2>
+      <ActionLegend />
+      <div className="card"><TradeList trades={data.trades} flows={data.flows} showFund={false} limit={400} /></div>
+
+      <h2>All flow days</h2>
+      <div className="card">
+        {[...data.flows].reverse().slice(0, 120).map((f) => <FlowRow key={f.as_of} f={f} showFund={false} />)}
+        {!data.flows.length && <div className="empty">Flow history appears once two snapshots exist.</div>}
+      </div>
       {data.source_url && <p className="muted small">Source: <a href={data.source_url} target="_blank" rel="noreferrer">{data.source_url}</a></p>}
     </div>
   )

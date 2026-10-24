@@ -32,13 +32,25 @@ GitHub Actions (daily)            git (main)                     GitHub Pages
    A file whose bytes match the previous snapshot is skipped, so running the job several times
    a day is harmless. The normalized CSVs in git are the source of truth.
 
-2. **Analyze** (`etftracker build`). Consecutive snapshots of each fund are diffed. Because
-   creations and redemptions scale every position's share count, the median share ratio across
-   positions is taken as the *flow factor* and divided out first; a position whose share count
-   then moved by more than the fund's `trade_threshold` is reported as an **add** or **trim**,
-   with **new** and **exit** for positions appearing or disappearing. The estimated dollar value
-   of each trade is the flow-adjusted share change times the day's price. Results are written as
-   static JSON (`index.json`, `activity.json`, `securities.json`, `funds/<T>.json`).
+2. **Analyze** (`etftracker build`). Consecutive snapshots of each fund are diffed. ETF share
+   counts move for two reasons: the manager trades, or investors create/redeem ETF shares and
+   every position scales pro rata. So the day's **flow factor** is measured first (the ratio of
+   ETF shares outstanding when the file reports it, otherwise the median share ratio across
+   positions), and each position is judged against it:
+
+   | label | meaning |
+   |---|---|
+   | `add` / `trim` | shares moved by more than the flow explains (beyond `trade_threshold`): an active buy or sell |
+   | `new` / `exit` | position appeared or disappeared |
+   | `kept` | fund had an outflow (beyond `flow_threshold`) and most positions shrank pro rata, but this one was left untouched: selectively preserved |
+   | `not_added` | fund had an inflow and most positions grew pro rata, but this one was not bought: selectively not added to |
+   | `flow` | shares moved in step with creations/redemptions; not a trading decision |
+
+   Every snapshot pair also yields a **flow event** (direction, size as a fraction of the fund,
+   estimated dollar amount, and which tickers were kept / not added / added / trimmed), so an
+   outflow day with no selective trades is reported as exactly that. The estimated dollar value
+   of a trade is the share change relative to a pro-rata move, times the day's price. Results
+   are written as static JSON (`index.json`, `activity.json`, `securities.json`, `funds/<T>.json`).
 
 3. **Web app** (`web/`, Vite + React). Reads that JSON. Pages: fund overview with latest
    changes; per-fund holdings table, position-history chart, any-two-dates comparison and trade
@@ -111,6 +123,8 @@ flags, and an "as of" date in a preamble line, a date column, or the file name. 
 
 * Trade detection is an estimate from end-of-day files. Rounded basket quantities, corporate
   actions, and in-kind baskets can produce small false positives; thresholds are per fund.
+  `kept` / `not_added` are only assigned when a pro-rata move would have been larger than the
+  file's rounding noise (`min_share_change`).
 * Weights and prices are whatever the issuer publishes (foreign lines are typically already in USD).
 * Sequoia's FilePoint page is currently hand-maintained with a static CSV while its live feed
   is being connected; the adapter tries the feed first and falls back to the static file.
