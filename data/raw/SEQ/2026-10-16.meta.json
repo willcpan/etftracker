@@ -1,0 +1,12 @@
+{
+ "fund": "SEQ",
+ "as_of": "2026-10-16",
+ "fetched_at": "2026-10-24T12:34:36+00:00",
+ "source_url": "https://sequoia.filepoint.live/assets/data/Sequoia_ETF_Holdings_10-16-2026.csv",
+ "content_type": null,
+ "sha256": "25a23d7082c96c726b5be6808171f48b30c413532de89552f14b1ca264775d5c",
+ "bytes": 3091,
+ "n_holdings": 37,
+ "total_market_value": 6664865170.36,
+ "n_rows": 37
+}
