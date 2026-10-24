@@ -218,3 +218,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# etftracker
+node_modules/
+web/dist/
+web/public/data/
+*.sqlite

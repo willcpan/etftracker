@@ -1,0 +1,92 @@
+# Funds tracked by etftracker. Add a fund by appending an entry; the daily job picks it up.
+#
+# source.type:
+#   csv         direct file URL (CSV or XLSX)
+#   json        GET a JSON document; rows live at records_path
+#   post        POST form fields; response is JSON (rows or CSV text at records_path) or raw CSV
+#   page_link   fetch an HTML page and follow the first link matching link_pattern
+#   html_table  fetch an HTML page and parse the holdings <table>
+# Any source may define a `fallback` source, tried when the primary fails or has no rows.
+#
+# columns: map normalized field -> exact source column name when the heuristics need help.
+# options:
+#   as_of_adjust: prev_business_day   file is stamped with the next trading date (US Bank style PCFs)
+#   trade_threshold: 0.02             per-fund override of settings.trade_threshold
+#   min_share_change: 3               ignore share changes smaller than this (rounded basket files)
+
+settings:
+  data_dir: data
+  trade_threshold: 0.005      # flow-adjusted share change that counts as a buy/sell (0.5%)
+  weight_threshold: 0.0025    # weight change (25 bp) used only when share counts are unavailable
+
+funds:
+  - ticker: EAGL
+    name: Eagle Capital Select Equity ETF
+    manager: Eagle Capital Management
+    website: https://www.eaglecap.com/eagl-etf
+    exchange: NYSE Arca
+    inception: 2024-03-21
+    source:
+      # The eaglecap.com daily-holdings page renders this JSON (see eagle-etf-holdings-v1.0.1.js).
+      type: json
+      url: https://emward-middleware-fea5fd912200.herokuapp.com/daily-holdings
+      records_path: holdings
+      as_of_path: basketEvaluationDate
+      fallback:
+        type: html_table
+        page: https://www.eaglecap.com/eagl-etf-daily-holdings
+    columns:
+      name: Security Description
+      ticker: Alternative Ticker
+      cusip: CUSIP
+      shares: Basket Quantity
+      weight: Constituent Weight (Base)
+      net_assets: Total Net Assets
+    options:
+      market_value_from_weight: true   # file has weight + net assets but no price/market value
+      cash_value_column: Estimated Cash Per Creation Unit
+      trade_threshold: 0.01
+      min_share_change: 2
+
+  - ticker: AKRE
+    name: Akre Focus ETF
+    manager: Akre Capital Management
+    website: https://www.akrefund.com/akre-focus-etf/
+    exchange: NYSE Arca
+    inception: 2025-10-13
+    source:
+      # FilePoint-hosted US Bank holdings file embedded on akrefund.com (akre.filepoint.live).
+      type: csv
+      url: https://akre.filepoint.live/assets/data/FilepointAkre.40B4.B4_ETF_Holdings.csv
+      fallback:
+        type: page_link
+        page: https://akre.filepoint.live/
+        link_pattern: 'ETF_Holdings\.csv'
+    columns:
+      ticker: StockTicker
+      name: SecurityName
+      cash_flag: MoneyMarketFlag
+    options:
+      as_of_adjust: prev_business_day   # "Date" column is the next trading day (basket effective date)
+
+  - ticker: SEQ
+    name: Sequoia ETF
+    manager: Ruane, Cunniff & Goldfarb
+    website: https://www.sequoiafund.com/sequoia-etf/
+    exchange: NYSE Arca
+    inception: 2026-10-19
+    source:
+      # FilePoint live feed (Ultimus). Returns {cached,data,error} with CSV text in `data`;
+      # while the feed is empty we fall back to the static CSV linked from the FilePoint page.
+      type: post
+      url: https://filepoint.live/sequoia/get_holdings_file.php
+      form: { fundID: "6604" }
+      records_path: data
+      fallback:
+        type: page_link
+        page: https://sequoia.filepoint.live/sequoia-etf
+        link_pattern: 'Sequoia_ETF_Holdings.*\.csv'
+    columns:
+      # static file: Identifier / Shares Held / Percentage of Net Assets
+      # live feed:   Security Identifier / Symbol / Net Assets % / Market Price
+      # both are covered by the header heuristics, so no overrides are needed

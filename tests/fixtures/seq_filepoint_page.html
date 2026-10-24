@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <title>Sequoia ETF</title>
+
+        <meta name="description" content="Sequoia ETF" />
+
+        <!--<link rel="shortcut icon" type="image/png" href="https://sitedev.filepoint.com/assets/img/favicon.png" />-->
+
+        <link
+            rel="stylesheet"
+            href="https://use.fontawesome.com/releases/v5.15.4/css/all.css"
+            integrity="sha384-DyZ88mC6Up2uqS4h/KRgHuoeGwBcD4Ng9SiP4dIRy0EXTlnuz47vAwmeGwVChigm"
+            crossorigin="anonymous"
+        />
+
+        <link rel="stylesheet" href="assets/css/app.css" />
+    </head>
+
+    <body id="page-top" class="default">
+        <div class="main-content">
+            
+            
+            <section id="metrics"  class="fund-section fundid sec-pad" data-id="6604"  data-index-name="S&amp;P 500">
+                <div class="content">
+                    <div class="row mb-4">
+                        <div class="col-12">
+                          <p class="kicker">Daily ETF metrics</p>
+                        </div>
+                        <div class="col-12 col-md-8">
+                          <h2 class="section-title">Net Asset Value &amp; Market Pricing</h2>
+                        </div>
+                        <div class="col-12 col-md-4">
+                          <p class="asof">As of <span class="datadate">--</span></p>
+                        </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-12 col-md-6 col-lg-3 mb-4">
+                        <div class="metric">
+                          <div class="lbl">Net Asset Value (NAV)</div>
+                          <div class="big num" id="data_fundNav">--</div>
+                          <div class="sub">Per share, end of day</div>
+                        </div>
+                      </div>
+                      <div class="col-12 col-md-6 col-lg-3 mb-4">
+                        <div class="metric">
+                          <div class="lbl">Closing Market Price</div>
+                          <div class="big num" id="data_marketPrice">--</div>
+                          <div class="sub">Last trade, 4:00 p.m. ET</div>
+                        </div>
+                      </div>
+                      <div class="col-12 col-md-6 col-lg-3 mb-4">
+                        <div class="metric">
+                          <div class="lbl">Premium / Discount to NAV</div>
+                          <div class="big num" id="data_premiumDiscountPercentage">--</div>
+                          <div class="sub">Market price vs. NAV</div>
+                        </div>
+                      </div>
+                      <div class="col-12 col-md-6 col-lg-3 mb-4">
+                        <div class="metric">
+                          <div class="lbl">30-Day Median Bid/Ask Spread</div>
+                          <div class="big num" id="data_medianBidAsk">--</div>
+                          <div class="sub">Rolling 30 calendar days</div>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-12 col-md-6">
+                        <div class="yield"><span class="yl">Total Assets</span><span class="yv num" id="data_totalAssets">--</span></div>
+                      </div>
+                      <div class="col-12 col-md-6">
+                        <div class="yield"><span class="yl">Number of Holdings</span><span class="yv num" id="data_holdingsCount">35</span></div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-12">
+                        <div class="disclosure">
+                          <b>Bid/ask spread monitoring.</b> As of the date shown, the Fund's median bid/ask spread has not
+                          exceeded 2% for seven or more consecutive trading days. A required explanation will appear here if
+                          that threshold is met, per Rule 6c-11.
+                        </div>
+                      </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="growth"  class="fund-section alt">
+                <div class="content">
+                    <div class="row mb-4">
+                        <div class="col-12">
+                          <p class="kicker">Investment comparison</p>
+                        </div>
+                        <div class="col-12 col-md-8">
+                          <h2 class="section-title">Growth of $10,000 Since Inception</h2>
+                        </div>
+                        <div class="col-12 col-md-4">
+                          <p class="asof" id="growthRange">--</p>
+                        </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-12">
+                        <div class="panel">
+                          <div class="chart-controls" role="group" aria-label="Select time period">
+                            <button type="button" class="chip active" data-period="all" aria-pressed="true">All</button>
+                            <button type="button" class="chip" data-period="2016" aria-pressed="false">Since June 2016</button>
+                            <button type="button" class="chip" data-period="5" aria-pressed="false">5 yr</button>
+                            <button type="button" class="chip" data-period="10" aria-pressed="false">10 yr</button>
+                            <button type="button" class="chip" data-period="15" aria-pressed="false">15 yr</button>
+                            <button type="button" class="chip" data-period="20" aria-pressed="false">20 yr</button>
+                          </div>
+                          <figure>
+                            <svg id="growthChart" viewBox="0 0 1000 440" width="100%" role="img"
+                                 aria-label="Line chart comparing growth of $10,000 in the Sequoia ETF versus the S&amp;P 500 Index over the selected period."></svg>
+                          </figure>
+                          <div class="legend">
+                            <span><i class="swatch" style="background:#003237"></i> Sequoia ETF</span>
+                            <span><i class="swatch" style="background:#8fbb9b"></i> S&amp;P 500 Index</span>
+                          </div>
+                          <p class="chart-note" id="growthNote">Growth of $10,000 since inception (July 15, 1970), assuming reinvestment of dividends. The S&amp;P 500 Index is unmanaged and incurs no expenses; it is not possible to invest directly in an index.</p>
+                        </div>
+                      </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="performance"  class="fund-section sec-pad">
+                <div class="content">
+                    <div class="row mb-4">
+                        <div class="col-12">
+                          <p class="kicker">Performance summary</p>
+                        </div>
+                        <div class="col-12 col-md-8">
+                          <h2 class="section-title">Total Returns</h2>
+                        </div>
+                        <div class="col-12 col-md-4">
+                        </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-12">
+            
+                        <ul class="nav nav-pills mb-3 performance-tab-list" role="tablist" id="performance-tabs">
+                          <li class="nav-item" role="presentation">
+                              <button class="nav-link active" id="performance-tab-btn-monthly" data-toggle="pill" data-target="#performance-tab-monthly" type="button" role="tab" aria-controls="performance-tab-monthly" aria-selected="true">Month-End</button>
+                          </li>
+                          <li class="nav-item" role="presentation">
+                              <button class="nav-link" id="performance-tab-btn-quarterly" data-toggle="pill" data-target="#performance-tab-quarterly" type="button" role="tab" aria-controls="performance-tab-quarterly" aria-selected="false">Quarter-End</button>
+                          </li>
+                        </ul>
+                        <div class="tab-content">
+                          <div class="tab-pane fade show active" id="performance-tab-monthly" role="tabpanel" aria-labelledby="performance-tab-btn-monthly">
+                            <p class="asof perfdate">As of <span class="monthly-perf-date">XX/XX/XXXX</span></p>
+                            <p>Average annual total returns. Fund inception July 15, 1970. Market-price returns are shown only for periods since the ETF listing date.</p>
+                              <div class="table-wrapper mt-5">
+                                  <table class="perf">
+                                      <thead>
+                                          <tr>
+                                              <th></th>
+                                              <th>1 Month</th>
+                                              <th>3 Months</th>
+                                              <th>YTD</th>
+                                              <th>1 Year</th>
+                                              <th>5 Years*</th>
+                                              <th>10 Years*</th>
+                                              <th>Since Inception*</th>
+                                          </tr>
+                                      </thead>
+                                      <tbody>
+                                          <tr>
+                                              <td>Sequoia ETF — NAV</td>
+                                              <td class="m_nav_1m">-</td>
+                                              <td class="m_nav_3m">-</td>
+                                              <td class="m_nav_ytd">-</td>
+                                              <td class="m_nav_1y">-</td>
+                                              <td class="m_nav_5y">-</td>
+                                              <td class="m_nav_10y">-</td>
+                                              <td class="m_nav_si">-</td>
+                                          </tr>
+                                          <tr>
+                                              <td>Sequoia ETF — Market Price</td>
+                                              <td class="m_mkt_1m">-</td>
+                                              <td class="m_mkt_3m">-</td>
+                                              <td class="m_mkt_ytd">-</td>
+                                              <td class="m_mkt_1y">-</td>
+                                              <td class="m_mkt_5y">-</td>
+                                              <td class="m_mkt_10y">-</td>
+                                              <td class="m_mkt_si">-</td>
+                                          </tr>
+                                          <tr>
+                                              <td>Standard &amp; Poor's 500</td>
+                                              <td class="m_index_1m">-</td>
+                                              <td class="m_index_3m">-</td>
+                                              <td class="m_index_ytd">-</td>
+                                              <td class="m_index_1y">-</td>
+                                              <td class="m_index_5y">-</td>
+                                              <td class="m_index_10y">-</td>
+                                              <td class="m_index_si">-</td>
+                                          </tr>
+                                      </tbody>
+                                  </table>
+                              </div>
+                          </div>
+            
+            
+                          <div class="tab-pane fade" id="performance-tab-quarterly" role="tabpanel" aria-labelledby="performance-tab-btn-quarterly">
+                            <p class="asof perfdate">As of <span class="quarterly-perf-date">XX/XX/XXXX</span></p>
+                            <p>Average annual total returns. Fund inception July 15, 1970. Market-price returns are shown only for periods since the ETF listing date.</p>
+                              <div class="table-wrapper mt-5">
+                                  <table class="styled">
+                                      <thead>
+                                          <tr>
+                                              <th></th>
+                                              <th>&nbsp;&nbsp;</th>
+                                              <th>QTD</th>
+                                              <th>YTD</th>
+                                              <th>1 Year</th>
+                                              <th>5 Years*</th>
+                                              <th>10 Years*</th>
+                                              <th>Since Inception*</th>
+                                          </tr>
+                                      </thead>
+                                      <tbody>
+                                          <tr>
+                                              <td>Sequoia ETF — NAV</td>
+                                              <td>&nbsp;&nbsp;</td>
+                                              <td class="q_nav_qtd">-</td>
+                                              <td class="q_nav_ytd">-</td>
+                                              <td class="q_nav_1y">-</td>
+                                              <td class="q_nav_5y">-</td>
+                                              <td class="q_nav_10y">-</td>
+                                              <td class="q_nav_si">-</td>
+                                          </tr>
+                                          <tr>
+                                              <td>Sequoia ETF — Market Price</td>
+                                              <td>&nbsp;&nbsp;</td>
+                                              <td class="q_mkt_qtd">-</td>
+                                              <td class="q_mkt_ytd">-</td>
+                                              <td class="q_mkt_1y">-</td>
+                                              <td class="q_mkt_5y">-</td>
+                                              <td class="q_mkt_10y">-</td>
+                                              <td class="q_mkt_si">-</td>
+                                          </tr>
+                                          <tr>
+                                              <td>Standard &amp; Poor's 500</td>
+                                              <td>&nbsp;&nbsp;</td>
+                                              <td class="q_index_qtd">-</td>
+                                              <td class="q_index_ytd">-</td>
+                                              <td class="q_index_1y">-</td>
+                                              <td class="q_index_5y">-</td>
+                                              <td class="q_index_10y">-</td>
+                                              <td class="q_index_si">-</td>
+                                          </tr>
+                                      </tbody>
+                                  </table>
+                              </div>
+                          </div>
+                        </div>
+            
+                        <p class="chart-note">*Annualized. Market-price returns are based on the midpoint of the bid/ask spread at 4:00 p.m. ET and will populate as trading history accrues after the October 16, 2026 listing.</p>
+                        <p><em>Performance data quoted represents past performance. Past performance does not guarantee future results. The investment return and principal value of an investment will fluctuate so that an investor’s shares, when redeemed, may be worth more or less than their original cost. Current performance may be lower or higher than the performance data quoted. Performance current to the most recent month-end can be obtained by calling 1-844-737-3230.</em></p>
+                      </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="historical"  class="fund-section alt">
+                <div class="content">
+                    <div class="row mb-4">
+                        <div class="col-12">
+                          <p class="kicker">Historical premium / discount</p>
+                        </div>
+                        <div class="col-12 col-md-8">
+                          <h2 class="section-title">Where Shares Traded Relative to NAV</h2>
+                        </div>
+                        <div class="col-12 col-md-4">
+                          <p class="asof">Since ETF listing (life of fund)</p>
+                        </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-12">
+                        <div class="panel" style="margin-bottom:22px">
+                          <div id="prem-disc-graph" class="pt-5 mr-0 pb-5">
+                              <div class="graph-placeholder">
+                                  <div id="premiumLineGraph"></div>
+                              </div>
+                          </div>
+                          <p class="chart-note">Daily closing market price vs. NAV. The line graph and the table below are both required under Rule 6c-11 and update daily.</p>
+                        </div>
+            
+                        <p class="mb-4">Number of trading days the Fund's shares closed at a premium or discount, by calendar quarter.</p>
+                        <div class="table-wrapper">
+                          <table class="tbl">
+                            <thead>
+                              <tr>
+                                <th>Quarter</th><th>Days at Premium</th><th>Days at NAV</th><th>Days at Discount</th><th>Widest Premium</th><th>Widest Discount</th>
+                              </tr>
+                            </thead>
+                            <tbody id="premDiscRows">
+                              <tr><td class="rowlabel">Q4 2026 (from Oct 16)</td><td class="num">--</td><td class="num">--</td><td class="num">--</td><td class="num">--</td><td class="num">--</td></tr>
+                            </tbody>
+                          </table>
+                        </div>
+            
+                        <p class="chart-note">Table shows the most recently completed calendar year and each completed quarter since, or the life of the Fund if shorter.</p>
+                      </div>
+                    </div>
+                </div>
+            </section>
+            
+            <section id="holdings"  class="fund-section sec-pad">
+                <div class="content">
+                    <div class="row mb-4">
+                        <div class="col-12">
+                          <p class="kicker">Portfolio holdings</p>
+                        </div>
+                        <div class="col-12 col-md-8">
+                          <h2 class="section-title">Top 10 Holdings</h2>
+                        </div>
+                        <div class="col-12 col-md-4">
+                          <p class="asof">As of <span class="holdingsdatetable">October 16, 2026</span></p>
+                        </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-12">
+                        <div class="holdingsx">
+                          <div class="table-wrapper mt-5">
+                            <table class="tbl holdings-table">
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Ticker</th>
+                                        <th>Percentage of Net Assets</th>
+                                    </tr>
+                                </thead>
+                                <!-- Holdings are maintained by hand for now (feed: filepoint.live/sequoia/get_holdings.php).
+                                     Individual lines, cash/currency excluded, % of net assets. Full file: assets/data/Sequoia_ETF_Holdings_<date>.csv -->
+                                <tbody id="topTenHoldings">
+                                    <tr><td>Rolls-Royce Holdings plc</td><td>RR/ LN</td><td class="num">10.34%</td></tr>
+                                    <tr><td>Universal Music Group N.V.</td><td>UMG NA</td><td class="num">9.09%</td></tr>
+                                    <tr><td>Eurofins Scientific S.E.</td><td>ERF FP</td><td class="num">6.55%</td></tr>
+                                    <tr><td>Liberty Media Corp-Liberty Formula One</td><td>FWONK</td><td class="num">5.41%</td></tr>
+                                    <tr><td>Taiwan Semiconductor Manufacturing Company Ltd.</td><td>TSM</td><td class="num">5.09%</td></tr>
+                                    <tr><td>Constellation Software, Inc./Canada</td><td>CSU CN</td><td class="num">4.96%</td></tr>
+                                    <tr><td>Alphabet, Inc.</td><td>GOOGL</td><td class="num">4.62%</td></tr>
+                                    <tr><td>Elevance Health, Inc.</td><td>ELV</td><td class="num">4.38%</td></tr>
+                                    <tr><td>Intercontinental Exchange, Inc.</td><td>ICE</td><td class="num">4.36%</td></tr>
+                                    <tr><td>Capital One Financial Corp.</td><td>COF</td><td class="num">4.20%</td></tr>
+                                </tbody>
+                            </table>
+                          </div>
+                        </div>
+                        <div class="holdings-actions">
+                          <a class="btn btn-solid" id="csvlink" href="assets/data/Sequoia_ETF_Holdings_10-16-2026.csv" download="Sequoia_ETF_Holdings_10-16-2026.csv">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 21h16"/></svg>
+                            Download holdings (CSV)
+                          </a>
+                        </div>
+                        <p class="chart-note">The top ten positions are calculated as a percentage of total net assets and exclude cash and cash equivalents. Full holdings are published daily and available as a downloadable CSV, per Rule 6c-11. Holdings are subject to change and are not recommendations to buy or sell any security.</p>
+                      </div>
+                    </div>
+                </div>
+            </section>
+            
+        </div>
+    
+        <p style="line-height:0;" data-iframe-height="">&nbsp;</p>
+        <script src="assets/js/app.js?version=1"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/iframe-resizer/4.2.11/iframeResizer.contentWindow.min.js" integrity="sha512-FOf4suFgz7OrWmBiyyWW48u/+6GaaAFSDHagh2EBu/GH/1+OQSYc0NFGeGeZK0gZ3vuU1ovmzVzD6bxmT4vayg==" crossorigin="anonymous"></script>
+    </body>
+</html>
