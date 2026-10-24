@@ -59,6 +59,7 @@ class Settings:
     data_dir: Path
     trade_threshold: float = 0.005  # relative share change (after flow adjustment) that counts as a trade
     weight_threshold: float = 0.0025  # absolute weight change (fraction) when shares are unavailable
+    flow_threshold: float = 0.0025  # creation/redemption size (fraction of fund) that counts as a flow day
     user_agent: str = (
         "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/130.0 Safari/537.36 etftracker/0.1"
@@ -104,6 +105,7 @@ def load_config(path: Path | str | None = None) -> Config:
         data_dir=data_dir,
         trade_threshold=float(settings_raw.get("trade_threshold", 0.005)),
         weight_threshold=float(settings_raw.get("weight_threshold", 0.0025)),
+        flow_threshold=float(settings_raw.get("flow_threshold", 0.0025)),
         user_agent=settings_raw.get("user_agent", Settings.user_agent),
     )
     funds = []

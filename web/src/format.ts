@@ -58,10 +58,33 @@ export const ACTION_LABEL: Record<string, string> = {
   exit: 'Exited',
   add: 'Added',
   trim: 'Trimmed',
-  hold: 'No trade',
+  kept: 'Kept through outflow',
+  not_added: 'Not added on inflow',
+  flow: 'Scaled with flows',
+  hold: 'No change',
 }
 
-export const ACTION_ICON: Record<string, string> = { new: '✚', exit: '✕', add: '▲', trim: '▼', hold: '·' }
+export const ACTION_SHORT: Record<string, string> = {
+  new: 'new', exit: 'exit', add: 'add', trim: 'trim', kept: 'kept', not_added: 'not added', flow: 'flow', hold: 'hold',
+}
+
+export const ACTION_ICON: Record<string, string> = {
+  new: '✚', exit: '✕', add: '▲', trim: '▼', kept: '◆', not_added: '◇', flow: '≈', hold: '·',
+}
+
+export const ACTION_HELP: Record<string, string> = {
+  new: 'Position appears for the first time.',
+  exit: 'Position is gone.',
+  add: 'Share count grew by more than creations explain: an active buy.',
+  trim: 'Share count fell by more than redemptions explain: an active sell.',
+  kept: 'Fund had an outflow and most positions shrank pro rata, but this one was left untouched: the manager chose to keep it.',
+  not_added: 'Fund had an inflow and most positions grew pro rata, but this one was not bought: the manager chose not to add.',
+  flow: 'Share count moved in step with creations/redemptions. Not a trading decision.',
+  hold: 'No change on a day without meaningful flows.',
+}
+
+export const flowLabel = (dir: string | null | undefined, pct: number | null | undefined): string =>
+  dir === 'inflow' ? `${signedPct(pct, 2)} inflow` : dir === 'outflow' ? `${signedPct(pct, 2)} outflow` : 'no meaningful flow'
 
 /** Read a CSS custom property from :root (for chart libraries that need literal colors). */
 export function cssVar(name: string): string {
