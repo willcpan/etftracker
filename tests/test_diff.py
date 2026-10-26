@@ -94,3 +94,35 @@ def test_cash_rows_ignored_and_few_positions_no_flow():
     assert d["flow_factor"] == 1.0 and d["flow_basis"] == "none"
     assert [t["key"] for t in d["trades"]] == ["T:AAA"]
     assert d["trades"][0]["action"] == "add"
+
+
+def test_selective_handling_does_not_mark_untouched_positions_as_kept():
+    # Real pattern (EAGL 2026-10-23): 0.76% redemption met by trimming 4 names; the
+    # other 23 positions untouched. Those are plain holds, the 4 cuts are the signal.
+    rows_prev = [(f"S{i}", f"Sec {i}", 100_000, 50, 0.04) for i in range(23)] + [
+        ("AJG", "Gallagher", 557_006, 258, 0.03), ("ASML", "ASML", 24_248, 1550, 0.01),
+        ("SAP", "SAP", 473_338, 215, 0.02), ("DHR", "Danaher", 1_009_031, 160, 0.03)]
+    rows_now = [(f"S{i}", f"Sec {i}", 100_000, 50, 0.04) for i in range(23)] + [
+        ("AJG", "Gallagher", 489_510, 258, 0.027), ("ASML", "ASML", 19_776, 1550, 0.008),
+        ("SAP", "SAP", 443_074, 215, 0.019), ("DHR", "Danaher", 987_815, 160, 0.03)]
+    prev = snap(date(2026, 10, 22), rows_prev, shares_outstanding=136_853_490)
+    now = snap(date(2026, 10, 23), rows_now, shares_outstanding=135_813_490)
+    d = diff_snapshots(prev, now, trade_threshold=0.01, min_share_change=2)
+    assert d["flow_direction"] == "outflow" and d["flow_handling"] == "selective"
+    assert d["n_unchanged"] == 23 and d["n_scaled"] == 0
+    by = {t["key"]: t for t in d["trades"]}
+    assert {by[f"T:S{i}"]["action"] for i in range(23)} == {"hold"}
+    assert {by[k]["action"] for k in ("T:AJG", "T:ASML", "T:SAP", "T:DHR")} == {"trim"}
+    # in the selective regime the trade is measured against no change, not pro rata
+    assert abs(by["T:AJG"]["est_value"] - (489_510 - 557_006) * 258) < 1e-6
+    assert d["counts"]["kept"] == 0 and d["counts"]["trim"] == 4
+
+
+def test_pro_rata_handling_still_marks_kept():
+    rows_prev = [(f"S{i}", f"Sec {i}", 100_000, 50, 0.1) for i in range(9)] + [("KEEP", "Kept Co", 100_000, 50, 0.1)]
+    rows_now = [(f"S{i}", f"Sec {i}", 99_000, 50, 0.1) for i in range(9)] + [("KEEP", "Kept Co", 100_000, 50, 0.1)]
+    d = diff_snapshots(snap(date(2026, 1, 2), rows_prev, shares_outstanding=1000),
+                       snap(date(2026, 1, 3), rows_now, shares_outstanding=990))
+    assert d["flow_handling"] == "pro_rata"
+    by = {t["key"]: t for t in d["trades"]}
+    assert by["T:KEEP"]["action"] == "kept" and by["T:S0"]["action"] == "flow"

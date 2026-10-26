@@ -161,7 +161,7 @@ CREATE TABLE IF NOT EXISTS trades (
   ticker TEXT, name TEXT, action TEXT NOT NULL, basis TEXT,
   shares_prev REAL, shares_now REAL, shares_change REAL, adj_change REAL,
   weight_prev REAL, weight_now REAL, weight_change REAL, est_value REAL, flow_factor REAL,
-  flow_direction TEXT
+  flow_direction TEXT, flow_handling TEXT
 );
 CREATE INDEX IF NOT EXISTS trades_fund_date ON trades(fund, as_of);
 """
@@ -192,11 +192,11 @@ def build_sqlite(store: Store, db_path: Path, funds_meta: dict[str, dict], trade
             )
     for fund, trades in trades_by_fund.items():
         con.executemany(
-            "INSERT INTO trades VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO trades VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             [(fund, t["as_of"], t["prev_as_of"], t["key"], t["ticker"], t["name"], t["action"], t["basis"],
               t["shares_prev"], t["shares_now"], t["shares_change"], t["adj_change"], t["weight_prev"],
               t["weight_now"], t["weight_change"], t["est_value"], t["flow_factor"],
-              t.get("flow_direction")) for t in trades],
+              t.get("flow_direction"), t.get("flow_handling")) for t in trades],
         )
     con.commit()
     con.close()

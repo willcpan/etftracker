@@ -46,9 +46,15 @@ GitHub Actions (daily)            git (main)                     GitHub Pages
    | `not_added` | fund had an inflow and most positions grew pro rata, but this one was not bought: selectively not added to |
    | `flow` | shares moved in step with creations/redemptions; not a trading decision |
 
+   A flow can be met in two ways, and the day's **handling** decides which labels apply: when
+   most positions scaled pro rata (`pro_rata`), the untouched ones are `kept` / `not_added`; when
+   most positions were untouched and the flow was met from cash or by trading a few names
+   (`selective`), those trades are the signal, measured against no change, and the untouched
+   positions are plain holds.
+
    Every snapshot pair also yields a **flow event** (direction, size as a fraction of the fund,
-   estimated dollar amount, and which tickers were kept / not added / added / trimmed), so an
-   outflow day with no selective trades is reported as exactly that. The estimated dollar value
+   estimated dollar amount, how it was handled, and which tickers were kept / not added / added /
+   trimmed), so an outflow day with no selective trades is reported as exactly that. The estimated dollar value
    of a trade is the share change relative to a pro-rata move, times the day's price. Results
    are written as static JSON (`index.json`, `activity.json`, `securities.json`, `funds/<T>.json`).
 

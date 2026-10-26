@@ -77,8 +77,8 @@ export const ACTION_HELP: Record<string, string> = {
   exit: 'Position is gone.',
   add: 'Share count grew by more than creations explain: an active buy.',
   trim: 'Share count fell by more than redemptions explain: an active sell.',
-  kept: 'Fund had an outflow and most positions shrank pro rata, but this one was left untouched: the manager chose to keep it.',
-  not_added: 'Fund had an inflow and most positions grew pro rata, but this one was not bought: the manager chose not to add.',
+  kept: 'Fund had an outflow and scaled most positions down pro rata, but this one was left untouched: the manager chose to keep it.',
+  not_added: 'Fund had an inflow and scaled most positions up pro rata, but this one was not bought: the manager chose not to add.',
   flow: 'Share count moved in step with creations/redemptions. Not a trading decision.',
   hold: 'No change on a day without meaningful flows.',
 }

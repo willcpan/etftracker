@@ -1,6 +1,8 @@
 export type Action = 'new' | 'exit' | 'add' | 'trim' | 'flow' | 'kept' | 'not_added' | 'hold'
 export type FlowDirection = 'inflow' | 'outflow' | 'none'
 export type FlowBasis = 'shares_outstanding' | 'median' | 'none'
+/** How the fund met the day's flow: scaling the whole book, trading a few names / using cash, or in between. */
+export type FlowHandling = 'pro_rata' | 'selective' | 'mixed' | 'none'
 
 export interface FundMeta {
   ticker: string
@@ -21,6 +23,9 @@ export interface FlowEvent {
   flow_factor: number
   flow_basis: FlowBasis
   flow_direction: FlowDirection
+  flow_handling: FlowHandling
+  n_unchanged: number
+  n_scaled: number
   flow_pct: number
   flow_value: number | null
   counts: ChangeCounts
