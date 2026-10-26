@@ -11,7 +11,10 @@ export default function ActionLegend() {
       <p className="small" style={{ margin: '8px 0 10px' }}>
         ETF share counts move for two reasons: the manager trades, or investors create/redeem ETF shares and every
         position scales pro rata. The fund's creation/redemption <b>flow</b> is measured first (from ETF shares
-        outstanding when the file reports it), and each position is then judged against it.
+        outstanding when the file reports it), and each position is then judged against it. A flow can be met
+        by scaling the whole book pro rata, in which case the positions left untouched are the signal, or by
+        trading a few names (or using cash), in which case those few trades are the signal and the untouched
+        positions are plain holds. Each flow row says which happened.
       </p>
       <div className="legend-box">
         {ORDER.map((a) => (

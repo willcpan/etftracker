@@ -19,6 +19,15 @@ share count moved relative to that factor:
 
 `kept` and `not_added` are the quieter signals: on a redemption day most positions
 shrink pro rata, so the ones left untouched are the ones the manager chose to keep.
+
+That only holds when the fund really did scale the book pro rata. Managers often meet
+a flow from cash or by trading a handful of names instead, leaving everything else
+untouched. So each flow day is first assigned a **handling** regime:
+
+  pro_rata    most positions moved with the flow -> untouched ones are kept / not_added
+  selective   most positions were untouched -> they are plain holds; the names that
+              moved are the signal, measured against no change rather than pro rata
+  mixed       neither majority -> pro-rata rules apply
 """
 from __future__ import annotations
 
@@ -81,6 +90,31 @@ def diff_snapshots(prev_snap: Snapshot, now_snap: Snapshot, trade_threshold: flo
     prev, now = _by_key(prev_snap), _by_key(now_snap)
     factor, basis = flow_factor(prev_snap, now_snap, prev, now)
     direction = "inflow" if factor - 1 >= flow_threshold else "outflow" if 1 - factor >= flow_threshold else "none"
+
+    # Pass 1: how did the fund handle the flow? Count positions held on both days that
+    # were untouched vs. scaled in step with the flow.
+    n_both = n_unchanged = n_scaled = 0
+    for key in set(prev) & set(now):
+        p, n = prev[key], now[key]
+        if p.shares is None or n.shares is None or p.shares <= 0:
+            continue
+        n_both += 1
+        if abs(n.shares - p.shares) <= min_share_change:
+            n_unchanged += 1
+        elif abs(n.shares / (p.shares * factor) - 1.0) < trade_threshold:
+            n_scaled += 1
+    if direction == "none" or n_both == 0:
+        handling = "none"
+    elif n_scaled * 2 >= n_both:
+        handling = "pro_rata"
+    elif n_unchanged * 2 > n_both:
+        handling = "selective"
+    else:
+        handling = "mixed"
+    # In the selective regime the rest of the book did not scale, so a position's
+    # expected share count is simply its previous one.
+    exp_factor = 1.0 if handling == "selective" else factor
+
     trades: list[dict] = []
     for key in sorted(set(prev) | set(now)):
         p, n = prev.get(key), now.get(key)
@@ -101,6 +135,7 @@ def diff_snapshots(prev_snap: Snapshot, now_snap: Snapshot, trade_threshold: flo
             "est_value": None,
             "flow_factor": factor,
             "flow_direction": direction,
+            "flow_handling": handling,
             "basis": "shares",
             "action": "hold",
         }
@@ -124,7 +159,7 @@ def diff_snapshots(prev_snap: Snapshot, now_snap: Snapshot, trade_threshold: flo
                 mv = p.market_value if p.market_value is not None else (p.shares * p.price if p.price is not None else None)
                 rec["est_value"] = -mv if mv else None
         elif p.shares is not None and n.shares is not None and p.shares > 0:
-            expected = p.shares * factor
+            expected = p.shares * exp_factor
             rec["shares_change"] = n.shares - p.shares
             rec["adj_change"] = n.shares / expected - 1.0
             px = n.price if n.price is not None else (
@@ -132,14 +167,20 @@ def diff_snapshots(prev_snap: Snapshot, now_snap: Snapshot, trade_threshold: flo
             rec["est_value"] = (n.shares - expected) * px if px is not None else None
             unchanged = abs(n.shares - p.shares) <= min_share_change
             if unchanged:
-                # Only call it selective when a pro-rata move would have been visible above
-                # the file's rounding noise; otherwise we cannot tell.
-                visible = abs(expected - p.shares) > min_share_change
-                rec["action"] = {"inflow": "not_added", "outflow": "kept", "none": "hold"}[direction] if visible else "hold"
-                if rec["action"] == "hold":
+                # Untouched on a flow day is only a signal when the rest of the book scaled
+                # pro rata, and only when a pro-rata move would have exceeded rounding noise.
+                visible = abs(p.shares * factor - p.shares) > min_share_change
+                if handling in ("pro_rata", "mixed") and visible:
+                    rec["action"] = {"inflow": "not_added", "outflow": "kept"}[direction]
+                else:
+                    rec["action"] = "hold"
                     rec["est_value"] = None
             elif abs(rec["adj_change"]) >= trade_threshold and abs(n.shares - p.shares) > min_share_change:
                 rec["action"] = "add" if rec["adj_change"] > 0 else "trim"
+            elif handling == "selective":
+                # moved, but by less than the trade threshold relative to no change
+                rec["action"] = "hold"
+                rec["est_value"] = None
             else:
                 rec["action"] = "flow" if direction != "none" or abs(factor - 1) > 1e-9 else "hold"
                 rec["est_value"] = None
@@ -158,6 +199,9 @@ def diff_snapshots(prev_snap: Snapshot, now_snap: Snapshot, trade_threshold: flo
         "flow_factor": factor,
         "flow_basis": basis,
         "flow_direction": direction,
+        "flow_handling": handling,
+        "n_unchanged": n_unchanged,
+        "n_scaled": n_scaled,
         "flow_pct": factor - 1.0,
         "flow_value": (factor - 1.0) * float(prev_assets) if prev_assets else None,
         "n_prev": len(prev),

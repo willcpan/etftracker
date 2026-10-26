@@ -20,7 +20,16 @@ export function flowSentence(f: FlowEvent): string {
   if (f.flow_direction === 'none') return `No meaningful creations or redemptions (${signedPct(f.flow_pct, 2)} ${basis}).`
   const dir = f.flow_direction === 'inflow' ? 'Inflow' : 'Outflow'
   const amt = f.flow_value != null ? `≈ ${money(Math.abs(f.flow_value))} ` : ''
-  return `${dir} ${amt}(${signedPct(f.flow_pct, 2)} ${basis}). ${c.flow} of ${f.n_positions} positions ${f.flow_direction === 'inflow' ? 'grew' : 'shrank'} pro rata.`
+  const head = `${dir} ${amt}(${signedPct(f.flow_pct, 2)} ${basis}).`
+  const verb = f.flow_direction === 'inflow' ? 'grew' : 'shrank'
+  switch (f.flow_handling) {
+    case 'selective':
+      return `${head} Met ${f.flow_direction === 'inflow' ? 'by buying' : 'by selling'} a few names or with cash: ${f.n_unchanged} of ${f.n_positions} positions untouched.`
+    case 'pro_rata':
+      return `${head} ${c.flow} of ${f.n_positions} positions ${verb} pro rata.`
+    default:
+      return `${head} ${c.flow} of ${f.n_positions} positions ${verb} pro rata, ${f.n_unchanged} untouched.`
+  }
 }
 
 export default function FlowRow({ f, showFund = true }: { f: FlowEvent; showFund?: boolean }) {
