@@ -2,11 +2,12 @@
 # then rebuild and deploy the site. Fund files are typically refreshed in the evening
 # (US Eastern) after the close, so we fetch early the next morning and once more
 # mid-morning as a retry; unchanged files are skipped, so extra runs are harmless.
+# Schedules are in UTC and may fire several minutes late when GitHub is busy.
 name: daily-fetch
 on:
   schedule:
-    - cron: "15 7 * * 1-6"   # 07:15 UTC = 03:15 ET (Tue-Sat covers Mon-Fri closes)
-    - cron: "15 13 * * 1-6"  # 13:15 UTC retry
+    - cron: "23 7 * * 1-6"   # 07:23 UTC = 03:23 ET, Mon-Sat (Monday re-checks Friday's files)
+    - cron: "23 13 * * 1-6"  # 13:23 UTC retry
   workflow_dispatch:
     inputs:
       funds:
