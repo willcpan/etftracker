@@ -29,6 +29,9 @@ def main(argv: list[str] | None = None) -> int:
 
     p = sub.add_parser("status", help="show stored snapshots per fund")
 
+    p = sub.add_parser("renormalize", help="re-parse stored raw files with the current parser (after parser fixes)")
+    p.add_argument("funds", nargs="*", help="tickers to re-parse (default: all)")
+
     p = sub.add_parser("import", help="import a holdings file from disk as a snapshot (for backfills/tests)")
     p.add_argument("fund")
     p.add_argument("file")
@@ -88,6 +91,39 @@ def main(argv: list[str] | None = None) -> int:
         for t in store.funds():
             dates = store.snapshot_dates(t)
             print(f"{t:6s} {len(dates):4d} snapshots  {dates[0] if dates else '-'} .. {dates[-1] if dates else '-'}")
+        return 0
+
+    if args.cmd == "renormalize":
+        import json
+
+        from .pipeline import parse_fetched
+        from .sources import Fetched, _from_json_payload
+
+        wanted = {t.upper() for t in args.funds}
+        for ticker in store.funds():
+            if wanted and ticker not in wanted:
+                continue
+            fund = config.fund(ticker)
+            for as_of in store.snapshot_dates(ticker):
+                meta_path = store.raw_dir / ticker / f"{as_of.isoformat()}.meta.json"
+                meta = json.loads(meta_path.read_text()) if meta_path.exists() else {}
+                raws = [p for p in (store.raw_dir / ticker).glob(f"{as_of.isoformat()}.*")
+                        if not p.name.endswith(".meta.json")]
+                if not raws:
+                    print(f"{ticker} {as_of}: no raw file, skipped")
+                    continue
+                data = raws[0].read_bytes()
+                ct = meta.get("content_type")
+                if raws[0].suffix == ".json":
+                    fetched = _from_json_payload(fund.source, data, ct or "application/json", meta.get("source_url") or raws[0].name)
+                else:
+                    fetched = Fetched(data, ct, meta.get("source_url") or raws[0].name)
+                holdings, _parsed_as_of, extra = parse_fetched(fund, fetched)
+                snap = store.read_snapshot(ticker, as_of)
+                snap.holdings = holdings
+                snap.extra = {**snap.extra, **{k: v for k, v in extra.items() if k != "header"}}
+                store.write_snapshot(snap, data)
+                print(f"{ticker} {as_of}: {len(holdings)} positions re-normalized")
         return 0
 
     if args.cmd == "import":

@@ -142,3 +142,11 @@ def test_override_falls_back_when_column_missing():
     data = b"Symbol,Security Identifier,Shares Held,Net Assets %\nAAPL,037833100,10,50\nMSFT,594918104,5,50\n"
     holdings, _as_of, _extra = parse_holdings(data, overrides={"cusip": "Identifier", "weight": "Percentage of Net Assets"})
     assert holdings[0].cusip == "037833100" and holdings[0].weight == 0.5
+
+
+def test_currency_lines_are_cash():
+    assert classify_asset(None, "EURO", None) == "cash"
+    assert classify_asset(None, "US DOLLAR", None) == "cash"
+    assert classify_asset("9BBH", "BBH SWEEP VEHICLE", None) == "cash"
+    assert classify_asset("ERF FP", "Eurofins Scientific S.E.", None) == "equity"
+    assert classify_asset("EURN", "Euronav NV", None) == "equity"
