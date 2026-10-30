@@ -55,10 +55,17 @@ SYNONYMS: dict[str, list[str]] = {
 CASH_RE = re.compile(
     r"\b(cash|money market|mmkt|treasury bill|t-bill|tbill|us treasury|treasury trust|treasury fund|deposit|repo|repurchase|"
     r"liquidity|sweep|fgxxx|government obligations|first american|dreyfus|invesco government|"
-    r"other assets|net other|payable|receivable|accrued|futures|forward)",
+    r"other assets|net other|payable|receivable|accrued|futures|forward|currency|sweep vehicle)",
     re.IGNORECASE,
 )
 CASH_TICKERS = {"CASH", "USD", "FGXXX", "FGTXX", "X9USDBLDP", "CASH_USD", "USD CASH", "DGCXX", "TFDXX", "SGOV", "BIL"}
+# Bare currency lines ("EURO", "EUR", "US DOLLAR", "GBP") are cash balances, not holdings.
+CURRENCY_LINE_RE = re.compile(
+    r"^(euro?|eur|usd|us ?dollars?|gbp|british pounds?( sterling)?|pound sterling|jpy|japanese yen|yen|chf|"
+    r"swiss francs?|cad|canadian dollars?|aud|australian dollars?|hkd|hong kong dollars?|twd|taiwan dollars?|"
+    r"sek|dkk|nok|[a-z]{3} (cash|currency))$",
+    re.IGNORECASE,
+)
 
 
 def _norm_header(h) -> str:
@@ -240,6 +247,8 @@ def classify_asset(ticker: str | None, name: str, asset_type_raw: str | None, ca
         return "cash"
     if at and re.search(r"equity|stock|common|adr|reit|preferred", at):
         return "equity"
+    if CURRENCY_LINE_RE.match((name or "").strip()) and not t:
+        return "cash"
     if CASH_RE.search(name or "") and not re.search(r"\b(inc|corp|co|ltd|plc|holdings|group)\b", (name or "").lower()):
         return "cash"
     if at and re.search(r"bond|note|debt|fixed|option|swap|future|warrant", at):
