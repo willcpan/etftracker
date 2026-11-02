@@ -1,0 +1,15 @@
+{
+ "fund": "EAGL",
+ "as_of": "2026-10-30",
+ "fetched_at": "2026-11-02T17:15:40+00:00",
+ "source_url": "https://emward-middleware-fea5fd912200.herokuapp.com/daily-holdings",
+ "content_type": "application/json; charset=utf-8",
+ "sha256": "b645a3b48237093f10f05fcbf7bbb53450a2decb538a9e329cab9c94a5504150",
+ "bytes": 12758,
+ "n_holdings": 28,
+ "total_market_value": 5032999466.582009,
+ "n_rows": 28,
+ "net_assets": 4879898604.69,
+ "shares_outstanding": 136943490.0,
+ "nav": 35.63505901
+}
