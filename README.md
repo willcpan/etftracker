@@ -58,7 +58,16 @@ GitHub Actions (daily)            git (main)                     GitHub Pages
    of a trade is the share change relative to a pro-rata move, times the day's price. Results
    are written as static JSON (`index.json`, `activity.json`, `securities.json`, `funds/<T>.json`).
 
-3. **Web app** (`web/`, Vite + React). Reads that JSON. Pages: fund overview with latest
+3. **Prices** (`etftracker prices`). For every detected trade, daily open/high/low/close/volume
+   bars for the window between the two snapshots are fetched (Yahoo Finance, with Stooq as a
+   fallback, no keys) and cached in `data/prices/<SYMBOL>.csv`. The fill is estimated as the
+   volume-weighted typical price ((high + low + close) / 3) across the window, with the window's
+   low..high as the plausible range, and trades are valued at that estimate. Foreign lines are
+   scaled from local currency to USD using the fund file's own USD close. Holdings tickers map
+   to market symbols automatically (`BRK/B` → `BRK-B`, `CSU CN` → `CSU.TO`, `RR/ LN` → `RR.L`);
+   `settings.symbol_overrides` in `funds.yaml` handles the exceptions.
+
+4. **Web app** (`web/`, Vite + React). Reads that JSON. Pages: fund overview with latest
    changes; per-fund holdings table, position-history chart, any-two-dates comparison and trade
    log; cross-fund activity feed with filters; portfolio overlap; per-security view.
 
@@ -81,6 +90,7 @@ allow that bot to push or point the job at a `data` branch.
 ```bash
 uv sync --all-extras              # python deps (or: pip install -e ".[dev]")
 uv run etftracker fetch           # download today's files into data/
+uv run etftracker prices          # daily bars for tickers with detected trades -> data/prices/
 uv run etftracker status          # snapshots per fund
 uv run etftracker build           # -> web/public/data/*.json
 uv run etftracker db              # -> data/etftracker.sqlite (funds, snapshots, holdings, trades)

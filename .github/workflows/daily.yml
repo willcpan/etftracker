@@ -34,6 +34,8 @@ jobs:
       - run: uv sync
       - name: Fetch holdings
         run: uv run etftracker fetch --fail-on-error ${{ inputs.funds }}
+      - name: Fetch daily prices for detected trades
+        run: uv run etftracker prices --days 45
       - name: Commit new snapshots
         id: commit
         run: |

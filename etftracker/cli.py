@@ -29,6 +29,10 @@ def main(argv: list[str] | None = None) -> int:
 
     p = sub.add_parser("status", help="show stored snapshots per fund")
 
+    p = sub.add_parser("prices", help="fetch daily market bars for tickers with detected trades (cached in data/prices)")
+    p.add_argument("funds", nargs="*", help="tickers to cover (default: all)")
+    p.add_argument("--days", type=int, default=0, help="only trades in the last N days (default: all stored history)")
+
     p = sub.add_parser("renormalize", help="re-parse stored raw files with the current parser (after parser fixes)")
     p.add_argument("funds", nargs="*", help="tickers to re-parse (default: all)")
 
@@ -91,6 +95,53 @@ def main(argv: list[str] | None = None) -> int:
         for t in store.funds():
             dates = store.snapshot_dates(t)
             print(f"{t:6s} {len(dates):4d} snapshots  {dates[0] if dates else '-'} .. {dates[-1] if dates else '-'}")
+        return 0
+
+    if args.cmd == "prices":
+        from datetime import date, timedelta
+
+        import httpx
+
+        from .diff import ACTIVE_ACTIONS, diff_series
+        from .prices import PriceStore, ensure_bars, yahoo_symbol
+
+        wanted = {t.upper() for t in args.funds}
+        cutoff = (date.today() - timedelta(days=args.days)).isoformat() if args.days else "0000-00-00"
+        windows: dict[str, list[date]] = {}
+        for ticker in store.funds():
+            if wanted and ticker not in wanted:
+                continue
+            try:
+                opts = config.fund(ticker).options
+            except KeyError:
+                opts = {}
+            diffs = diff_series(store.read_all(ticker), float(opts.get("trade_threshold", config.settings.trade_threshold)),
+                                config.settings.weight_threshold, float(opts.get("min_share_change", 0)),
+                                float(opts.get("flow_threshold", config.settings.flow_threshold)))
+            for d in diffs:
+                if d["as_of"] < cutoff:
+                    continue
+                for t in d["trades"]:
+                    if t["action"] in ACTIVE_ACTIONS and t["basis"] == "shares":
+                        sym = yahoo_symbol(t["ticker"], config.settings.symbol_overrides)
+                        if sym:
+                            windows.setdefault(sym, []).extend([date.fromisoformat(t["prev_as_of"]), date.fromisoformat(t["as_of"])])
+        prices = PriceStore(store.data_dir)
+        meta = prices.read_meta()
+        ok = failed = 0
+        with httpx.Client(timeout=httpx.Timeout(30.0, connect=15.0), follow_redirects=True) as client:
+            for sym in sorted(windows):
+                lo, hi = min(windows[sym]), max(windows[sym])
+                before = len(prices.read(sym))
+                bars = ensure_bars(prices, sym, lo, hi, client, meta)
+                if sym in meta.get("failed", {}):
+                    failed += 1
+                    print(f"{sym:10s} no data")
+                else:
+                    ok += 1
+                    print(f"{sym:10s} {len(bars):4d} bars ({len(bars) - before:+d}) {lo}..{hi}")
+        prices.write_meta(meta)
+        print(f"{ok} symbols covered, {failed} without data")
         return 0
 
     if args.cmd == "renormalize":

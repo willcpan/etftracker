@@ -14,6 +14,8 @@ from pathlib import Path
 
 from .config import Config
 from .diff import ACTIVE_ACTIONS, diff_series
+from .models import Snapshot
+from .prices import PriceStore, estimate_fill, yahoo_symbol
 from .store import Store
 from .util import now_utc_iso
 
@@ -39,6 +41,46 @@ def _holding_json(h, prev=None) -> dict:
     return d
 
 
+def attach_price_estimates(diffs: list[dict], snaps: list[Snapshot], prices: PriceStore,
+                           overrides: dict[str, str] | None = None) -> None:
+    """Add px_* fields to every active trade from cached daily bars, and re-value the
+    trade at the estimated fill price. Trades without bars keep the fund file's close."""
+    from datetime import date as _date
+
+    closes: dict[tuple[str, str], float | None] = {}
+    for s in snaps:
+        for h in s.holdings:
+            closes[(h.key, s.as_of.isoformat())] = h.price
+    cache: dict[str, dict] = {}
+    for d in diffs:
+        for t in d["trades"]:
+            t["px_close"] = closes.get((t["key"], t["as_of"])) or closes.get((t["key"], t["prev_as_of"]))
+            t["px_est"] = t["px_low"] = t["px_high"] = None
+            t["px_days"] = 0
+            t["px_symbol"] = None
+            if t["action"] not in ACTIVE_ACTIONS or t["basis"] != "shares":
+                continue
+            sym = yahoo_symbol(t["ticker"], overrides)
+            if not sym:
+                continue
+            if sym not in cache:
+                cache[sym] = prices.read(sym)
+            bars = cache[sym]
+            if not bars:
+                continue
+            est = estimate_fill(bars, _date.fromisoformat(t["prev_as_of"]), _date.fromisoformat(t["as_of"]), t["px_close"])
+            if not est:
+                continue
+            t.update(est)
+            t["px_symbol"] = sym
+            # Re-value the trade at the estimated fill. shares traded = change relative to
+            # the expectation already encoded in est_value / px_close.
+            if t["est_value"] is not None and t["px_close"]:
+                traded_shares = t["est_value"] / t["px_close"]
+                t["est_value_close"] = t["est_value"]
+                t["est_value"] = traded_shares * t["px_est"]
+
+
 def fund_analytics(store: Store, config: Config, ticker: str) -> dict | None:
     snaps = store.read_all(ticker)
     if not snaps:
@@ -56,6 +98,7 @@ def fund_analytics(store: Store, config: Config, ticker: str) -> dict | None:
     min_share_change = float(opts.get("min_share_change", 0))
     ft = float(opts.get("flow_threshold", config.settings.flow_threshold))
     diffs = diff_series(snaps, tt, wt, min_share_change, ft)
+    attach_price_estimates(diffs, snaps, PriceStore(store.data_dir), config.settings.symbol_overrides)
     latest = snaps[-1]
     prev = snaps[-2] if len(snaps) > 1 else None
     latest_diff = diffs[-1] if diffs else None

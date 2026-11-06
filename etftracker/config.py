@@ -60,6 +60,7 @@ class Settings:
     trade_threshold: float = 0.005  # relative share change (after flow adjustment) that counts as a trade
     weight_threshold: float = 0.0025  # absolute weight change (fraction) when shares are unavailable
     flow_threshold: float = 0.0025  # creation/redemption size (fraction of fund) that counts as a flow day
+    symbol_overrides: dict[str, str] = field(default_factory=dict)  # holdings ticker -> market-data symbol ("" = none)
     user_agent: str = (
         "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/130.0 Safari/537.36 etftracker/0.1"
@@ -106,6 +107,7 @@ def load_config(path: Path | str | None = None) -> Config:
         trade_threshold=float(settings_raw.get("trade_threshold", 0.005)),
         weight_threshold=float(settings_raw.get("weight_threshold", 0.0025)),
         flow_threshold=float(settings_raw.get("flow_threshold", 0.0025)),
+        symbol_overrides={str(k).upper(): str(v) for k, v in (settings_raw.get("symbol_overrides", {}) or {}).items()},
         user_agent=settings_raw.get("user_agent", Settings.user_agent),
     )
     funds = []
