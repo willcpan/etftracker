@@ -61,10 +61,19 @@ export interface Trade {
   weight_now: number | null
   weight_change: number | null
   est_value: number | null
+  est_value_close?: number | null
   flow_factor: number | null
   flow_direction: FlowDirection
   basis: 'shares' | 'weight'
   action: Action
+  /** Fund file's end-of-day price (USD) on the trade date. */
+  px_close?: number | null
+  /** Estimated fill: volume-weighted typical price over the window, with its low..high range. */
+  px_est?: number | null
+  px_low?: number | null
+  px_high?: number | null
+  px_days?: number
+  px_symbol?: string | null
 }
 
 export interface IndexFile {

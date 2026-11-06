@@ -1,0 +1,23 @@
+{
+ "failed": {},
+ "sources": {
+  "ACN": "yahoo",
+  "AJG": "yahoo",
+  "AMZN": "yahoo",
+  "ASML": "yahoo",
+  "CCC": "yahoo",
+  "COF": "yahoo",
+  "COP": "yahoo",
+  "DHR": "yahoo",
+  "HUM": "yahoo",
+  "MA": "yahoo",
+  "MDLN": "yahoo",
+  "MELI": "yahoo",
+  "META": "yahoo",
+  "MSFT": "yahoo",
+  "ROP": "yahoo",
+  "SAP": "yahoo",
+  "TSM": "yahoo",
+  "WDAY": "yahoo"
+ }
+}

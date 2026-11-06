@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { FlowEvent, Trade } from '../api'
-import { fmtDate, pp, signedInt, signedMoney, signedPct } from '../format'
+import { fmtDate, num, pp, signedInt, signedMoney, signedPct } from '../format'
 import ActionChip from './ActionChip'
 import FlowRow from './FlowRow'
 
@@ -28,6 +28,22 @@ function describe(t: Trade): string {
     default:
       return ''
   }
+}
+
+function PriceLine({ t }: { t: Trade }) {
+  if (t.px_est == null) {
+    return t.px_close != null && t.action !== 'kept' && t.action !== 'not_added'
+      ? <div className="nm">at the day's close ≈ ${num(t.px_close)} (no market bars available)</div>
+      : null
+  }
+  const vsClose = t.px_close ? (t.px_est / t.px_close - 1) * 100 : null
+  return (
+    <div className="nm" title={`Volume-weighted typical price over ${t.px_days} trading day${t.px_days === 1 ? '' : 's'} (${t.px_symbol}); range is the window's low to high`}>
+      est. fill ≈ <b>${num(t.px_est)}</b> (range ${num(t.px_low)}–${num(t.px_high)}
+      {t.px_days && t.px_days > 1 ? `, ${t.px_days} days` : ''})
+      {t.px_close != null && vsClose != null ? `, close ${num(t.px_close)} (${vsClose >= 0 ? '+' : ''}${vsClose.toFixed(1)}%)` : ''}
+    </div>
+  )
 }
 
 type Row = { kind: 'trade'; t: Trade } | { kind: 'flow'; f: FlowEvent }
@@ -69,8 +85,9 @@ export default function TradeList({ trades, flows = [], showFund = true, limit }
               <Link to={`/security/${encodeURIComponent(r.t.key)}`}><b>{r.t.ticker ?? '—'}</b></Link>{' '}
               <span className="nm">{r.t.name}</span>
               <div className="nm">{describe(r.t)}</div>
+              {(r.t.action === 'add' || r.t.action === 'trim' || r.t.action === 'new' || r.t.action === 'exit') && <PriceLine t={r.t} />}
             </span>
-            <span className="val" title="Estimated dollar value relative to a pro-rata move">{signedMoney(r.t.est_value)}</span>
+            <span className="val" title={r.t.px_est != null ? 'Estimated dollar value at the estimated fill price' : 'Estimated dollar value at the fund file\'s closing price'}>{signedMoney(r.t.est_value)}</span>
           </div>
         ),
       )}
