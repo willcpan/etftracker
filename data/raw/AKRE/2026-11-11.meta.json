@@ -1,0 +1,14 @@
+{
+ "fund": "AKRE",
+ "as_of": "2026-11-11",
+ "fetched_at": "2026-11-12T16:04:04+00:00",
+ "source_url": "https://akre.filepoint.live/assets/data/FilepointAkre.40B4.B4_ETF_Holdings.csv",
+ "content_type": "application/octet-stream",
+ "sha256": "b0dc10a180a000e3f095071cbdc4825fa16073816d447b0d5ebbed9fde144745",
+ "bytes": 3057,
+ "n_holdings": 21,
+ "total_market_value": 4950882419.62,
+ "n_rows": 21,
+ "net_assets": 4950991102.75,
+ "shares_outstanding": 81650075.0
+}
