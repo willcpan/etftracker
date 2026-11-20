@@ -4,6 +4,7 @@
   "ACN": "yahoo",
   "AJG": "yahoo",
   "AMZN": "yahoo",
+  "ANT": "yahoo",
   "ASML": "yahoo",
   "CCC": "yahoo",
   "CHTR": "yahoo",
@@ -23,6 +24,8 @@
   "ROP": "yahoo",
   "SAP": "yahoo",
   "TSM": "yahoo",
-  "WDAY": "yahoo"
+  "UNH": "yahoo",
+  "WDAY": "yahoo",
+  "ZTS": "yahoo"
  }
 }
