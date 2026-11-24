@@ -1,0 +1,12 @@
+{
+ "fund": "SEQ",
+ "as_of": "2026-11-23",
+ "fetched_at": "2026-11-24T18:58:24+00:00",
+ "source_url": "https://filepoint.live/sequoia/get_holdings_file.php",
+ "content_type": "text/csv",
+ "sha256": "273a0bb026c8c56528b15a3f8d43b1e91c833b60ae22547a2e49466bbe506bfa",
+ "bytes": 4541,
+ "n_holdings": 38,
+ "total_market_value": 6882794851.37,
+ "n_rows": 38
+}
